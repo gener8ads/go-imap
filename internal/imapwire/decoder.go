@@ -347,6 +347,23 @@ func (dec *Decoder) ExpectNumber64(ptr *int64) bool {
 	return dec.Expect(dec.Number64(ptr), "number64")
 }
 
+func (dec *Decoder) NumberU64(ptr *uint64) bool {
+	s, ok := dec.numberStr()
+	if !ok {
+		return false
+	}
+	v, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return false // can happen on overflow
+	}
+	*ptr = uint64(v)
+	return true
+}
+
+func (dec *Decoder) ExpectNumberU64(ptr *uint64) bool {
+	return dec.Expect(dec.NumberU64(ptr), "numberU64")
+}
+
 func (dec *Decoder) ModSeq(ptr *uint64) bool {
 	s, ok := dec.numberStr()
 	if !ok {

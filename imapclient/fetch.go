@@ -57,6 +57,7 @@ func writeFetchItems(enc *imapwire.Encoder, numKind imapwire.NumKind, options *i
 		"INTERNALDATE":  options.InternalDate,
 		"RFC822.SIZE":   options.RFC822Size,
 		"MODSEQ":        options.ModSeq,
+		"X-GM-MSGID":    options.GoogleIDs,
 	}
 	for k, req := range m {
 		if req {
@@ -292,6 +293,12 @@ type FetchItemData interface {
 	fetchItemData()
 }
 
+type FetchItemDataXGMMsgID struct {
+	id uint64
+}
+
+func (f FetchItemDataXGMMsgID) fetchItemData() {}
+
 var (
 	_ FetchItemData = FetchItemDataBodySection{}
 	_ FetchItemData = FetchItemDataBinarySection{}
@@ -301,6 +308,7 @@ var (
 	_ FetchItemData = FetchItemDataRFC822Size{}
 	_ FetchItemData = FetchItemDataUID{}
 	_ FetchItemData = FetchItemDataBodyStructure{}
+	_ FetchItemData = FetchItemDataXGMMsgID{}
 )
 
 type discarder interface {
@@ -412,6 +420,7 @@ type FetchMessageBuffer struct {
 	BinarySection     map[*imap.FetchItemBinarySection][]byte
 	BinarySectionSize []FetchItemDataBinarySectionSize
 	ModSeq            uint64 // requires CONDSTORE
+	XGmMsgID          uint64
 }
 
 func (buf *FetchMessageBuffer) populateItemData(item FetchItemData) error {
@@ -450,6 +459,8 @@ func (buf *FetchMessageBuffer) populateItemData(item FetchItemData) error {
 		buf.BinarySectionSize = append(buf.BinarySectionSize, item)
 	case FetchItemDataModSeq:
 		buf.ModSeq = item.ModSeq
+	case FetchItemDataXGMMsgID:
+		buf.XGmMsgID = item.id
 	default:
 		panic(fmt.Errorf("unsupported fetch item data %T", item))
 	}
@@ -658,6 +669,12 @@ func (c *Client) handleFetch(seqNum uint32) error {
 				return dec.Err()
 			}
 			item = FetchItemDataModSeq{ModSeq: modSeq}
+		case "X-GM-MSGID":
+			var msgId uint64
+			if !dec.ExpectSP() || !dec.ExpectSpecial('(') || !dec.ExpectNumberU64(&msgId) || !dec.ExpectSpecial(')') {
+				return dec.Err()
+			}
+			item = FetchItemDataXGMMsgID{id: msgId}
 		default:
 			return fmt.Errorf("unsupported msg-att name: %q", attName)
 		}
