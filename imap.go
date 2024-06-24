@@ -36,6 +36,8 @@ const (
 
 	// Items
 	FetchBody          FetchItem = "BODY"
+	FetchBodyPeek      FetchItem = "BODY.PEEK[]"
+	FetchXGmMsgID      FetchItem = "X-GM-MSGID"
 	FetchBodyStructure FetchItem = "BODYSTRUCTURE"
 	FetchEnvelope      FetchItem = "ENVELOPE"
 	FetchFlags         FetchItem = "FLAGS"

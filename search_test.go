@@ -2,6 +2,7 @@ package imap
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/textproto"
 	"reflect"
@@ -66,6 +67,26 @@ var searchCriteriaTests = []struct {
 		},
 	},
 	{
+		expected: `((X-GM-THRID) (X-GM-RAW "has:attachment") (X-GM-MSGID))`,
+		criteria: &SearchCriteria{
+			Raw: []Raw{
+				{"X-GM-THRID", nil},
+				{"X-GM-RAW", "has:attachment"},
+				{"X-GM-MSGID", nil},
+			},
+		},
+	},
+	{
+		expected: `((X-GM-THRID) (X-GM-MSGID) (X-GM-RAW "has:attachment"))`,
+		criteria: &SearchCriteria{
+			Raw: []Raw{
+				{"X-GM-THRID", nil},
+				{"X-GM-MSGID", nil},
+				{"X-GM-RAW", "has:attachment"},
+			},
+		},
+	},
+	{
 		expected: "(ALL)",
 		criteria: &SearchCriteria{},
 	},
@@ -93,6 +114,7 @@ func TestSearchCriteria_Parse(t *testing.T) {
 		b := bytes.NewBuffer([]byte(test.expected))
 		r := NewReader(b)
 		fields, _ := r.ReadFields()
+		fmt.Println(fields)
 
 		if err := criteria.ParseWithCharset(fields[0].([]interface{}), nil); err != nil {
 			t.Errorf("Cannot parse search criteria for #%v: %v", i+1, err)

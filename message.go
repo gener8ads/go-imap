@@ -181,6 +181,9 @@ type Message struct {
 	// because some bad IMAP clients (looking at you, Outlook!) refuse responses
 	// containing items in a different order.
 	itemsOrder []FetchItem
+
+	// Google specific unique identifier
+	XGmMsgID uint64
 }
 
 // Create a new empty message that will contain the specified items.
@@ -259,6 +262,8 @@ func (m *Message) Parse(fields []interface{}) error {
 				m.Size, _ = ParseNumber(f)
 			case FetchUid:
 				m.Uid, _ = ParseNumber(f)
+			case FetchXGmMsgID:
+				m.XGmMsgID, _ = ParseInt64(f)
 			default:
 				// Likely to be a section of the body
 				// First check that the section name is correct

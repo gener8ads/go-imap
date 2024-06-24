@@ -87,6 +87,31 @@ func ParseNumber(f interface{}) (uint32, error) {
 	return uint32(nbr), nil
 }
 
+// ParseInt64 parses a number.
+func ParseInt64(f interface{}) (uint64, error) {
+	// Useful for tests
+	if n, ok := f.(uint64); ok {
+		return n, nil
+	}
+
+	var s string
+	switch f := f.(type) {
+	case RawString:
+		s = string(f)
+	case string:
+		s = f
+	default:
+		return 0, newParseError("expected a number, got a non-atom")
+	}
+
+	nbr, err := strconv.ParseUint(s, 10, 64)
+	if err != nil {
+		return 0, &parseError{err}
+	}
+
+	return nbr, nil
+}
+
 // ParseString parses a string, which is either a literal, a quoted string or an
 // atom.
 func ParseString(f interface{}) (string, error) {
