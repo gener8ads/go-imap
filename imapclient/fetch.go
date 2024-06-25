@@ -671,7 +671,7 @@ func (c *Client) handleFetch(seqNum uint32) error {
 			item = FetchItemDataModSeq{ModSeq: modSeq}
 		case "X-GM-MSGID":
 			var msgId uint64
-			if !dec.ExpectSP() || !dec.ExpectSpecial('(') || !dec.ExpectNumberU64(&msgId) || !dec.ExpectSpecial(')') {
+			if !dec.ExpectSP() || !dec.ExpectNumberU64(&msgId) {
 				return dec.Err()
 			}
 			item = FetchItemDataXGMMsgID{id: msgId}
