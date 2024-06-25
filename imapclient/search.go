@@ -248,6 +248,23 @@ func writeSearchKey(enc *imapwire.Encoder, criteria *imap.SearchCriteria) {
 		}
 	}
 
+	for _, raw := range criteria.Raw {
+		if raw.Value != nil {
+			switch v := raw.Value.(type) {
+			case string:
+				// Handle the string case
+				encodeItem().Atom(raw.Key).SP().Quoted(v)
+			case int64:
+				// Handle the int64 case
+				// Convert int64 to string if necessary
+				encodeItem().Atom(raw.Key).SP().Number64(v)
+			default:
+				// Optionally handle other unexpected types
+				panic("unsupported type in Raw Value")
+			}
+		}
+	}
+
 	for _, not := range criteria.Not {
 		encodeItem().Atom("NOT").SP()
 		writeSearchKey(enc, &not)
