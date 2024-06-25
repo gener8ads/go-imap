@@ -294,7 +294,7 @@ type FetchItemData interface {
 }
 
 type FetchItemDataXGMMsgID struct {
-	id uint64
+	Id uint64
 }
 
 func (f FetchItemDataXGMMsgID) fetchItemData() {}
@@ -460,7 +460,7 @@ func (buf *FetchMessageBuffer) populateItemData(item FetchItemData) error {
 	case FetchItemDataModSeq:
 		buf.ModSeq = item.ModSeq
 	case FetchItemDataXGMMsgID:
-		buf.XGmMsgID = item.id
+		buf.XGmMsgID = item.Id
 	default:
 		panic(fmt.Errorf("unsupported fetch item data %T", item))
 	}
@@ -674,7 +674,7 @@ func (c *Client) handleFetch(seqNum uint32) error {
 			if !dec.ExpectSP() || !dec.ExpectNumberU64(&msgId) {
 				return dec.Err()
 			}
-			item = FetchItemDataXGMMsgID{id: msgId}
+			item = FetchItemDataXGMMsgID{Id: msgId}
 		default:
 			return fmt.Errorf("unsupported msg-att name: %q", attName)
 		}
