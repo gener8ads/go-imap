@@ -80,7 +80,7 @@ func addIDKeyValue(enc *commandEncoder, isFirstKey *bool, key, value string) {
 func (c *Client) handleID() error {
 	data, err := c.readID(c.dec)
 	if err != nil {
-		return fmt.Errorf("in id: %v", err)
+		return fmt.Errorf("in Id: %v", err)
 	}
 
 	if cmd := findPendingCmdByType[*IDCommand](c); cmd != nil {
@@ -105,7 +105,7 @@ func (c *Client) readID(dec *imapwire.Decoder) (*imap.IDData, error) {
 	err := dec.ExpectList(func() error {
 		var keyOrValue string
 		if !dec.String(&keyOrValue) {
-			return fmt.Errorf("in id key-val list: %v", dec.Err())
+			return fmt.Errorf("in Id key-val list: %v", dec.Err())
 		}
 
 		if currKey == "" {

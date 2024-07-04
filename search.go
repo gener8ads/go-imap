@@ -16,6 +16,11 @@ type SearchOptions struct {
 	ReturnSave bool
 }
 
+type Raw struct {
+	Key   string
+	Value interface{}
+}
+
 // SearchCriteria is a criteria for the SEARCH command.
 //
 // When multiple fields are populated, the result is the intersection ("and"
@@ -59,6 +64,8 @@ type SearchCriteria struct {
 	Or  [][2]SearchCriteria
 
 	ModSeq *SearchCriteriaModSeq // requires CONDSTORE
+
+	Raw []Raw
 }
 
 // And intersects two search criteria.
