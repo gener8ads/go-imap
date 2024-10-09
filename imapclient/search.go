@@ -253,7 +253,7 @@ func writeSearchKey(enc *imapwire.Encoder, criteria *imap.SearchCriteria) {
 			switch v := raw.Value.(type) {
 			case string:
 				// Handle the string case
-				encodeItem().Atom(raw.Key).SP().Quoted(v)
+				encodeItem().Atom(raw.Key).SP().String(v)
 			case int64:
 				// Handle the int64 case
 				// Convert int64 to string if necessary
@@ -401,6 +401,13 @@ func searchCriteriaIsASCII(criteria *imap.SearchCriteria) bool {
 	for _, or := range criteria.Or {
 		if !searchCriteriaIsASCII(&or[0]) || !searchCriteriaIsASCII(&or[1]) {
 			return false
+		}
+	}
+	for _, raw := range criteria.Raw {
+		if valStr, ok := raw.Value.(string); ok {
+			if !isASCII(raw.Key) || !isASCII(valStr) {
+				return false
+			}
 		}
 	}
 	return true
