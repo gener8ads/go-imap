@@ -622,6 +622,10 @@ func (dec *Decoder) ExpectLiteralReader() (lit *LiteralReader, nonSync bool, err
 	return lit, nonSync, nil
 }
 
+func (dec *Decoder) PeekBuffer() (bufferContents []byte, err error) {
+	return dec.r.Peek(dec.r.Buffered())
+}
+
 type LiteralReader struct {
 	dec  *Decoder
 	size int64
