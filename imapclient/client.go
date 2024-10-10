@@ -782,6 +782,8 @@ func (c *Client) readResponseTagged(tag, typ string) (startTLS *startTLSCommand,
 }
 
 func (c *Client) readResponseData(typ string) error {
+	bufferedBytes, _ := c.dec.PeekBuffer()
+
 	// number SP ("EXISTS" / "RECENT" / "FETCH" / "EXPUNGE")
 	var num uint32
 	if typ[0] >= '0' && typ[0] <= '9' {
@@ -816,7 +818,7 @@ func (c *Client) readResponseData(typ string) error {
 				c.setCaps(caps)
 			case "PERMANENTFLAGS":
 				if !c.dec.ExpectSP() {
-					return c.dec.Err()
+					return fmt.Errorf("in %s: %v; contents of decoder ||%s||", typ, c.dec.Err(), string(bufferedBytes))
 				}
 				flags, err := internal.ExpectFlagList(c.dec)
 				if err != nil {
@@ -838,7 +840,7 @@ func (c *Client) readResponseData(typ string) error {
 			case "UIDNEXT":
 				var uidNext imap.UID
 				if !c.dec.ExpectSP() || !c.dec.ExpectUID(&uidNext) {
-					return c.dec.Err()
+					return fmt.Errorf("in %s: %v; contents of decoder ||%s||", typ, c.dec.Err(), string(bufferedBytes))
 				}
 				if cmd := findPendingCmdByType[*SelectCommand](c); cmd != nil {
 					cmd.data.UIDNext = uidNext
@@ -846,14 +848,14 @@ func (c *Client) readResponseData(typ string) error {
 			case "UIDVALIDITY":
 				var uidValidity uint32
 				if !c.dec.ExpectSP() || !c.dec.ExpectNumber(&uidValidity) {
-					return c.dec.Err()
+					return fmt.Errorf("in %s: %v; contents of decoder ||%s||", typ, c.dec.Err(), string(bufferedBytes))
 				}
 				if cmd := findPendingCmdByType[*SelectCommand](c); cmd != nil {
 					cmd.data.UIDValidity = uidValidity
 				}
 			case "COPYUID":
 				if !c.dec.ExpectSP() {
-					return c.dec.Err()
+					return fmt.Errorf("in %s: %v; contents of decoder ||%s||", typ, c.dec.Err(), string(bufferedBytes))
 				}
 				uidValidity, srcUIDs, dstUIDs, err := readRespCodeCopyUID(c.dec)
 				if err != nil {
@@ -922,12 +924,12 @@ func (c *Client) readResponseData(typ string) error {
 		return c.handleEnabled()
 	case "NAMESPACE":
 		if !c.dec.ExpectSP() {
-			return c.dec.Err()
+			return fmt.Errorf("in %s: %v; contents of decoder ||%s||", typ, c.dec.Err(), string(bufferedBytes))
 		}
 		return c.handleNamespace()
 	case "FLAGS":
 		if !c.dec.ExpectSP() {
-			return c.dec.Err()
+			return fmt.Errorf("in %s: %v; contents of decoder ||%s||", typ, c.dec.Err(), string(bufferedBytes))
 		}
 		return c.handleFlags()
 	case "EXISTS":
@@ -936,17 +938,17 @@ func (c *Client) readResponseData(typ string) error {
 		// ignore
 	case "LIST":
 		if !c.dec.ExpectSP() {
-			return c.dec.Err()
+			return fmt.Errorf("in %s: %v; contents of decoder ||%s||", typ, c.dec.Err(), string(bufferedBytes))
 		}
 		return c.handleList()
 	case "STATUS":
 		if !c.dec.ExpectSP() {
-			return c.dec.Err()
+			return fmt.Errorf("in %s: %v; contents of decoder ||%s||", typ, c.dec.Err(), string(bufferedBytes))
 		}
 		return c.handleStatus()
 	case "FETCH":
 		if !c.dec.ExpectSP() {
-			return c.dec.Err()
+			return fmt.Errorf("in %s: %v; contents of decoder ||%s||", typ, c.dec.Err(), string(bufferedBytes))
 		}
 		return c.handleFetch(num)
 	case "EXPUNGE":
@@ -961,27 +963,27 @@ func (c *Client) readResponseData(typ string) error {
 		return c.handleThread()
 	case "METADATA":
 		if !c.dec.ExpectSP() {
-			return c.dec.Err()
+			return fmt.Errorf("in %s: %v; contents of decoder ||%s||", typ, c.dec.Err(), string(bufferedBytes))
 		}
 		return c.handleMetadata()
 	case "QUOTA":
 		if !c.dec.ExpectSP() {
-			return c.dec.Err()
+			return fmt.Errorf("in %s: %v; contents of decoder ||%s||", typ, c.dec.Err(), string(bufferedBytes))
 		}
 		return c.handleQuota()
 	case "QUOTAROOT":
 		if !c.dec.ExpectSP() {
-			return c.dec.Err()
+			return fmt.Errorf("in %s: %v; contents of decoder ||%s||", typ, c.dec.Err(), string(bufferedBytes))
 		}
 		return c.handleQuotaRoot()
 	case "MYRIGHTS":
 		if !c.dec.ExpectSP() {
-			return c.dec.Err()
+			return fmt.Errorf("in %s: %v; contents of decoder ||%s||", typ, c.dec.Err(), string(bufferedBytes))
 		}
 		return c.handleMyRights()
 	case "ACL":
 		if !c.dec.ExpectSP() {
-			return c.dec.Err()
+			return fmt.Errorf("in %s: %v; contents of decoder ||%s||", typ, c.dec.Err(), string(bufferedBytes))
 		}
 		return c.handleGetACL()
 	default:
