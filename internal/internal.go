@@ -75,7 +75,7 @@ func ExpectFlag(dec *imapwire.Decoder) (imap.Flag, error) {
 		return imap.FlagWildcard, nil // flag-perm
 	}
 	var name string
-	if !dec.ExpectAtom(&name) {
+	if !dec.ExpectAString(&name) {
 		return "", fmt.Errorf("in flag: %w", dec.Err())
 	}
 	if isSystem {
