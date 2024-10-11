@@ -625,6 +625,8 @@ func (c *Client) readResponse() error {
 		err      error
 		startTLS *startTLSCommand
 	)
+
+	bufferedBytes, _ := c.dec.PeekBuffer()
 	if tag != "" {
 		token = "response-tagged"
 		startTLS, err = c.readResponseTagged(tag, typ)
@@ -633,7 +635,7 @@ func (c *Client) readResponse() error {
 		err = c.readResponseData(typ)
 	}
 	if err != nil {
-		return fmt.Errorf("in %v: %v", token, err)
+		return fmt.Errorf("in %v: %v; contents of decoder ||%s||", token, err, string(bufferedBytes))
 	}
 
 	if !c.dec.ExpectCRLF() {
@@ -782,8 +784,6 @@ func (c *Client) readResponseTagged(tag, typ string) (startTLS *startTLSCommand,
 }
 
 func (c *Client) readResponseData(typ string) error {
-	bufferedBytes, _ := c.dec.PeekBuffer()
-
 	// number SP ("EXISTS" / "RECENT" / "FETCH" / "EXPUNGE")
 	var num uint32
 	if typ[0] >= '0' && typ[0] <= '9' {
@@ -794,7 +794,7 @@ func (c *Client) readResponseData(typ string) error {
 
 		num = uint32(v)
 		if !c.dec.ExpectSP() || !c.dec.ExpectAtom(&typ) {
-			return c.dec.Err()
+			return fmt.Errorf("in pre-step %s: %v", typ, c.dec.Err())
 		}
 	}
 
@@ -818,7 +818,7 @@ func (c *Client) readResponseData(typ string) error {
 				c.setCaps(caps)
 			case "PERMANENTFLAGS":
 				if !c.dec.ExpectSP() {
-					return fmt.Errorf("in %s: %v; contents of decoder ||%s||", typ, c.dec.Err(), string(bufferedBytes))
+					return fmt.Errorf("in %s: %v", typ, c.dec.Err())
 				}
 				flags, err := internal.ExpectFlagList(c.dec)
 				if err != nil {
@@ -840,7 +840,7 @@ func (c *Client) readResponseData(typ string) error {
 			case "UIDNEXT":
 				var uidNext imap.UID
 				if !c.dec.ExpectSP() || !c.dec.ExpectUID(&uidNext) {
-					return fmt.Errorf("in %s: %v; contents of decoder ||%s||", typ, c.dec.Err(), string(bufferedBytes))
+					return fmt.Errorf("in %s: %v", typ, c.dec.Err())
 				}
 				if cmd := findPendingCmdByType[*SelectCommand](c); cmd != nil {
 					cmd.data.UIDNext = uidNext
@@ -848,14 +848,14 @@ func (c *Client) readResponseData(typ string) error {
 			case "UIDVALIDITY":
 				var uidValidity uint32
 				if !c.dec.ExpectSP() || !c.dec.ExpectNumber(&uidValidity) {
-					return fmt.Errorf("in %s: %v; contents of decoder ||%s||", typ, c.dec.Err(), string(bufferedBytes))
+					return fmt.Errorf("in %s: %v", typ, c.dec.Err())
 				}
 				if cmd := findPendingCmdByType[*SelectCommand](c); cmd != nil {
 					cmd.data.UIDValidity = uidValidity
 				}
 			case "COPYUID":
 				if !c.dec.ExpectSP() {
-					return fmt.Errorf("in %s: %v; contents of decoder ||%s||", typ, c.dec.Err(), string(bufferedBytes))
+					return fmt.Errorf("in %s: %v", typ, c.dec.Err())
 				}
 				uidValidity, srcUIDs, dstUIDs, err := readRespCodeCopyUID(c.dec)
 				if err != nil {
@@ -924,12 +924,12 @@ func (c *Client) readResponseData(typ string) error {
 		return c.handleEnabled()
 	case "NAMESPACE":
 		if !c.dec.ExpectSP() {
-			return fmt.Errorf("in %s: %v; contents of decoder ||%s||", typ, c.dec.Err(), string(bufferedBytes))
+			return fmt.Errorf("in %s: %v", typ, c.dec.Err())
 		}
 		return c.handleNamespace()
 	case "FLAGS":
 		if !c.dec.ExpectSP() {
-			return fmt.Errorf("in %s: %v; contents of decoder ||%s||", typ, c.dec.Err(), string(bufferedBytes))
+			return fmt.Errorf("in %s: %v", typ, c.dec.Err())
 		}
 		return c.handleFlags()
 	case "EXISTS":
@@ -938,17 +938,17 @@ func (c *Client) readResponseData(typ string) error {
 		// ignore
 	case "LIST":
 		if !c.dec.ExpectSP() {
-			return fmt.Errorf("in %s: %v; contents of decoder ||%s||", typ, c.dec.Err(), string(bufferedBytes))
+			return fmt.Errorf("in %s: %v", typ, c.dec.Err())
 		}
 		return c.handleList()
 	case "STATUS":
 		if !c.dec.ExpectSP() {
-			return fmt.Errorf("in %s: %v; contents of decoder ||%s||", typ, c.dec.Err(), string(bufferedBytes))
+			return fmt.Errorf("in %s: %v", typ, c.dec.Err())
 		}
 		return c.handleStatus()
 	case "FETCH":
 		if !c.dec.ExpectSP() {
-			return fmt.Errorf("in %s: %v; contents of decoder ||%s||", typ, c.dec.Err(), string(bufferedBytes))
+			return fmt.Errorf("in %s: %v", typ, c.dec.Err())
 		}
 		return c.handleFetch(num)
 	case "EXPUNGE":
@@ -963,27 +963,27 @@ func (c *Client) readResponseData(typ string) error {
 		return c.handleThread()
 	case "METADATA":
 		if !c.dec.ExpectSP() {
-			return fmt.Errorf("in %s: %v; contents of decoder ||%s||", typ, c.dec.Err(), string(bufferedBytes))
+			return fmt.Errorf("in %s: %v", typ, c.dec.Err())
 		}
 		return c.handleMetadata()
 	case "QUOTA":
 		if !c.dec.ExpectSP() {
-			return fmt.Errorf("in %s: %v; contents of decoder ||%s||", typ, c.dec.Err(), string(bufferedBytes))
+			return fmt.Errorf("in %s: %v", typ, c.dec.Err())
 		}
 		return c.handleQuota()
 	case "QUOTAROOT":
 		if !c.dec.ExpectSP() {
-			return fmt.Errorf("in %s: %v; contents of decoder ||%s||", typ, c.dec.Err(), string(bufferedBytes))
+			return fmt.Errorf("in %s: %v", typ, c.dec.Err())
 		}
 		return c.handleQuotaRoot()
 	case "MYRIGHTS":
 		if !c.dec.ExpectSP() {
-			return fmt.Errorf("in %s: %v; contents of decoder ||%s||", typ, c.dec.Err(), string(bufferedBytes))
+			return fmt.Errorf("in %s: %v", typ, c.dec.Err())
 		}
 		return c.handleMyRights()
 	case "ACL":
 		if !c.dec.ExpectSP() {
-			return fmt.Errorf("in %s: %v; contents of decoder ||%s||", typ, c.dec.Err(), string(bufferedBytes))
+			return fmt.Errorf("in %s: %v", typ, c.dec.Err())
 		}
 		return c.handleGetACL()
 	default:
